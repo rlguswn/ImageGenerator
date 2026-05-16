@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import '../services/app_paths.dart';
 import '../services/process_manager.dart';
 import 'home_screen.dart';
 import 'startup_screen.dart';
@@ -52,6 +53,20 @@ class _SplashScreenState extends State<SplashScreen> {
           if (line.contains('모델 로딩') && mounted) _setStepRunning(2);
         });
       } else {
+        // 개발 모드: venv 존재 여부 먼저 확인
+        final root = findProjectRoot();
+        final sep = Platform.pathSeparator;
+        final venvPython = '$root${sep}venv${sep}Scripts${sep}python.exe';
+        if (!File(venvPython).existsSync()) {
+          throw Exception(
+            '백엔드 실행 환경이 없습니다.\n\n'
+            '다음 중 하나를 실행하세요:\n'
+            '  • python build.py          (전체 빌드)\n'
+            '  • python build.py --flutter-only 후\n'
+            '    venv 수동 생성: python -m venv venv\n'
+            '  • run_dev.bat              (자동 환경 구성)',
+          );
+        }
         await processManager.startDev(onLog: (line) {
           if (line.contains('모델 로딩') && mounted) _setStepRunning(2);
         });
