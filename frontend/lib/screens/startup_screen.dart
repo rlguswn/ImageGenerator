@@ -179,7 +179,7 @@ class _StartupScreenState extends State<StartupScreen> {
               GestureDetector(
                 onTap: _stopCountdown,
                 child: DropdownButtonFormField<String>(
-                  value: _selectedModel.isEmpty ? null : _selectedModel,
+                  initialValue: _selectedModel.isEmpty ? null : _selectedModel,
                   dropdownColor: const Color(0xFF0F3460),
                   style: const TextStyle(color: Colors.white),
                   decoration: _inputDecoration(),
@@ -206,7 +206,7 @@ class _StartupScreenState extends State<StartupScreen> {
               GestureDetector(
                 onTap: _stopCountdown,
                 child: DropdownButtonFormField<String>(
-                  value: _precision,
+                  initialValue: _precision,
                   dropdownColor: const Color(0xFF0F3460),
                   style: const TextStyle(color: Colors.white),
                   decoration: _inputDecoration(),
@@ -235,7 +235,7 @@ class _StartupScreenState extends State<StartupScreen> {
 
               if (_autoStart) ...[
                 Text(
-                  '${_countdown}초 후 자동 시작...',
+                  '$_countdown초 후 자동 시작...',
                   style: const TextStyle(color: Colors.white54, fontSize: 13),
                 ),
                 const SizedBox(height: 8),
@@ -315,7 +315,7 @@ class _StartupScreenState extends State<StartupScreen> {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: const Color(0xFF0F3460),
+            activeThumbColor: const Color(0xFF0F3460),
           ),
         ],
       ),

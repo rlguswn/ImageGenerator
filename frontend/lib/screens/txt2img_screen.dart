@@ -194,7 +194,7 @@ class _Txt2ImgScreenState extends State<Txt2ImgScreen>
       final s = preset['settings'] ?? {};
       final w = s['width'] ?? 512;
       final h = s['height'] ?? 512;
-      _resolution = '${w}x${h}';
+      _resolution = '${w}x$h';
       _steps = (s['steps'] ?? 20).toDouble();
       _cfgScale = (s['cfg_scale'] ?? 7.0).toDouble();
       _seedCtrl.text = (s['seed'] ?? -1).toString();
@@ -278,7 +278,7 @@ class _Txt2ImgScreenState extends State<Txt2ImgScreen>
           child: ListView.separated(
             shrinkWrap: true,
             itemCount: _promptHistory.length,
-            separatorBuilder: (_, __) =>
+            separatorBuilder: (_, _) =>
                 const Divider(color: Colors.white12, height: 1),
             itemBuilder: (_, i) => ListTile(
               dense: true,
@@ -432,7 +432,7 @@ class _Txt2ImgScreenState extends State<Txt2ImgScreen>
         const SizedBox(height: 12),
         _label('해상도'),
         DropdownButtonFormField<String>(
-          value: _resolution,
+          initialValue: _resolution,
           dropdownColor: const Color(0xFF0F3460),
           style: const TextStyle(color: Colors.white),
           decoration: _inputDeco(),
@@ -487,7 +487,7 @@ class _Txt2ImgScreenState extends State<Txt2ImgScreen>
       children: [
         _label('Sampler'),
         DropdownButtonFormField<String>(
-          value: _sampler,
+          initialValue: _sampler,
           dropdownColor: const Color(0xFF0F3460),
           style: const TextStyle(color: Colors.white),
           decoration: _inputDeco(),
@@ -550,7 +550,7 @@ class _Txt2ImgScreenState extends State<Txt2ImgScreen>
                         style: const TextStyle(
                             color: Colors.white70, fontSize: 13)),
                     value: isOn,
-                    activeColor: Colors.blueAccent,
+                    activeThumbColor: Colors.blueAccent,
                     onChanged: (v) => setState(() {
                       if (v) {
                         _selectedLoras[name] = 0.8;

@@ -178,9 +178,9 @@ class _DebugScreenState extends State<DebugScreen>
       _KV('CUDA', (h['cuda_available'] as bool? ?? false) ? '사용 가능' : '없음'),
       _KV('모델 로딩', (h['model_loaded'] as bool? ?? false) ? '예' : '아니오'),
       _KV('모델 경로', (h['model_path'] ?? '-').toString().split('/').last),
-      _KV('VRAM 전체', '${vramTotal} MB'),
-      _KV('VRAM 사용', '${vramUsed} MB'),
-      _KV('VRAM 여유', '${vramFree} MB'),
+      _KV('VRAM 전체', '$vramTotal MB'),
+      _KV('VRAM 사용', '$vramUsed MB'),
+      _KV('VRAM 여유', '$vramFree MB'),
       _KV('사용률', vramTotal > 0
           ? '${(vramUsed / vramTotal * 100).toStringAsFixed(1)}%'
           : '-'),
@@ -319,10 +319,15 @@ class _DebugScreenState extends State<DebugScreen>
 
   Widget _buildLogLine(String line) {
     Color color = Colors.white70;
-    if (line.contains('ERROR')) color = Colors.redAccent;
-    else if (line.contains('WARNING')) color = Colors.orangeAccent;
-    else if (line.contains('INFO')) color = const Color(0xFF90CAF9);
-    else if (line.contains('DEBUG')) color = Colors.white38;
+    if (line.contains('ERROR')) {
+      color = Colors.redAccent;
+    } else if (line.contains('WARNING')) {
+      color = Colors.orangeAccent;
+    } else if (line.contains('INFO')) {
+      color = const Color(0xFF90CAF9);
+    } else if (line.contains('DEBUG')) {
+      color = Colors.white38;
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 1),
@@ -400,14 +405,14 @@ class _DebugScreenState extends State<DebugScreen>
             Switch(
               value: autoRefresh,
               onChanged: onToggle,
-              activeColor: Colors.blueAccent,
+              activeThumbColor: Colors.blueAccent,
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             const SizedBox(width: 6),
             Text(label,
                 style: const TextStyle(color: Colors.white54, fontSize: 12)),
           ],
-          if (extra != null) extra,
+          ?extra,
           const Spacer(),
           IconButton(
             icon: const Icon(Icons.refresh, color: Colors.white54, size: 18),
@@ -456,7 +461,7 @@ class _DebugScreenState extends State<DebugScreen>
         child: Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.red.shade900.withOpacity(0.3),
+            color: Colors.red.shade900.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(message,
