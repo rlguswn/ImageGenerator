@@ -52,6 +52,7 @@ class _InpaintScreenState extends State<InpaintScreen> {
 
   // Pipeline
   String _pipelineMode = '';
+  bool _modelLoaded = false;
 
   @override
   void initState() {
@@ -209,10 +210,14 @@ class _InpaintScreenState extends State<InpaintScreen> {
     try {
       final h = await api.health();
       if (mounted) {
-        setState(() => _pipelineMode = h['pipeline_mode'] as String? ?? '');
+        setState(() {
+          _pipelineMode = h['pipeline_mode'] as String? ?? '';
+          _modelLoaded = h['model_loaded'] as bool? ?? false;
+        });
       }
     } catch (_) {}
   }
+
 
   Future<void> _pickImage() async {
     final result = await FilePicker.platform.pickFiles(
@@ -360,6 +365,13 @@ class _InpaintScreenState extends State<InpaintScreen> {
   }
 
   Future<void> _checkAndGenerate() async {
+    if (!_modelLoaded) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('로드된 모델이 없습니다. 설정 탭에서 모델을 선택해 주세요.'),
+        duration: Duration(seconds: 3),
+      ));
+      return;
+    }
     if (_inputImage == null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('입력 이미지를 선택하세요')));

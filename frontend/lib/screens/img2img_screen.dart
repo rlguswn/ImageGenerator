@@ -35,6 +35,8 @@ class _Img2ImgScreenState extends State<Img2ImgScreen>
   double _clipSkip = 1;
   double _denoisingStrength = 0.75;
 
+  bool _modelLoaded = false;
+
   Uint8List? _inputImage;
   List<Uint8List> _outputImages = [];
   String _generationTime = '';
@@ -54,6 +56,7 @@ class _Img2ImgScreenState extends State<Img2ImgScreen>
     _tabController = TabController(length: 3, vsync: this);
     _restoreState();
     _loadLoras();
+    _checkModelLoaded();
     genService.notifier.addListener(_onServiceChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final pending = regenNotifier.value;
@@ -236,6 +239,13 @@ class _Img2ImgScreenState extends State<Img2ImgScreen>
     } catch (_) {}
   }
 
+  Future<void> _checkModelLoaded() async {
+    try {
+      final h = await api.health();
+      if (mounted) setState(() => _modelLoaded = h['model_loaded'] as bool? ?? false);
+    } catch (_) {}
+  }
+
   Future<void> _pickImage() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.image,
@@ -258,6 +268,13 @@ class _Img2ImgScreenState extends State<Img2ImgScreen>
   }
 
   Future<void> _generate() async {
+    if (!_modelLoaded) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('로드된 모델이 없습니다. 설정 탭에서 모델을 선택해 주세요.'),
+        duration: Duration(seconds: 3),
+      ));
+      return;
+    }
     SessionStorage.saveSession('img2img', _promptCtrl.text, _negativeCtrl.text);
     if (_inputImage == null) {
       ScaffoldMessenger.of(context)
