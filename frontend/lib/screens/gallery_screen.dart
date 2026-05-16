@@ -25,7 +25,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
   String _filterMode = '전체';
   String _filterSort = '최신순';
   final _searchCtrl = TextEditingController();
-  Set<String> _selectedIds = {};
+  final Set<String> _selectedIds = {};
   bool _multiSelect = false;
 
   @override
@@ -122,7 +122,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
     final state = <String, dynamic>{
       'prompt': meta['prompt'] ?? '',
       'negative': meta['negative_prompt'] ?? '',
-      'resolution': '${w}x${h}',
+      'resolution': '${w}x$h',
       'steps': (settings['steps'] as num?)?.toDouble() ?? 20.0,
       'cfgScale': (settings['cfg_scale'] as num?)?.toDouble() ?? 7.0,
       'seed': '-1',
@@ -362,8 +362,11 @@ class _GalleryScreenState extends State<GalleryScreen> {
           onTap: () {
             if (_multiSelect) {
               setState(() {
-                if (isSelected) _selectedIds.remove(item.id);
-                else _selectedIds.add(item.id);
+                if (isSelected) {
+                _selectedIds.remove(item.id);
+              } else {
+                _selectedIds.add(item.id);
+              }
               });
             } else {
               setState(() => _selected = item);
@@ -379,7 +382,7 @@ class _GalleryScreenState extends State<GalleryScreen> {
               if (isSelected)
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.blueAccent.withOpacity(0.4),
+                    color: Colors.blueAccent.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(color: Colors.blueAccent, width: 2),
                   ),

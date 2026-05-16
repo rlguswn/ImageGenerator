@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../services/app_paths.dart';
 import 'startup_screen.dart';
 
@@ -136,7 +135,7 @@ class _EulaScreenState extends State<EulaScreen> {
             child: Container(
               margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF0F3460).withOpacity(0.3),
+                color: const Color(0xFF0F3460).withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.white12),
               ),

@@ -125,6 +125,10 @@
 | 2026-05-15 | startup_screen: 모델 선택 드롭다운 아래 라이선스 확인 안내 문구 추가 |
 | 2026-05-15 | THIRD_PARTY_NOTICES.txt 신규: 15개 오픈소스 라이브러리 저작권 고지 (PyTorch/diffusers/transformers/FastAPI/Flutter 등) |
 | 2026-05-15 | build.py: 패키징 시 THIRD_PARTY_NOTICES.txt 자동 복사 추가 |
+| 2026-05-17 | run.bat: 절대경로 → %~dp0 상대경로로 수정 (이식성 개선) |
+| 2026-05-17 | build.py: flutter pub get 누락 추가 (패키지 캐시 없는 환경에서 빌드 실패 수정) |
+| 2026-05-17 | settings_screen: 런타임 모델 교체 UI 추가 — 현재 모델 표시, 드롭다운 선택, 정밀도/VRAM/CPU 옵션, 교체 버튼 |
+| 2026-05-17 | flutter analyze: 전체 프로젝트 0 issues 달성 (deprecated API 교체, 미사용 import/필드 정리 등 43건) |
 
 ---
 

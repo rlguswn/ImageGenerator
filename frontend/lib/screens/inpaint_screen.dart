@@ -512,7 +512,7 @@ class _InpaintScreenState extends State<InpaintScreen> {
             divisions: 58),
         _label('Sampler'),
         DropdownButtonFormField<String>(
-          value: _sampler,
+          initialValue: _sampler,
           dropdownColor: const Color(0xFF0F3460),
           style: const TextStyle(color: Colors.white),
           decoration: _inputDeco(),
@@ -948,11 +948,11 @@ class _MaskPainter extends CustomPainter {
     if (inverted) {
       canvas.drawRect(
         Rect.fromLTWH(0, 0, imageRect.width, imageRect.height),
-        Paint()..color = Colors.red.withOpacity(0.35),
+        Paint()..color = Colors.red.withValues(alpha: 0.35),
       );
     }
 
-    for (final s in [...strokes, if (currentStroke != null) currentStroke!]) {
+    for (final s in [...strokes, ?currentStroke]) {
       _drawStroke(canvas, s);
     }
 
@@ -971,7 +971,7 @@ class _MaskPainter extends CustomPainter {
     if (inverted) {
       // 반전: 브러시 = 빨간 오버레이 제거(보호 영역), 지우개 = 오버레이 추가
       if (stroke.isEraser) {
-        paint.color = Colors.red.withOpacity(0.35);
+        paint.color = Colors.red.withValues(alpha: 0.35);
       } else {
         paint.color = Colors.transparent;
         paint.blendMode = BlendMode.clear;
@@ -982,7 +982,7 @@ class _MaskPainter extends CustomPainter {
         paint.color = Colors.transparent;
         paint.blendMode = BlendMode.clear;
       } else {
-        paint.color = Colors.red.withOpacity(0.5);
+        paint.color = Colors.red.withValues(alpha: 0.5);
       }
     }
 

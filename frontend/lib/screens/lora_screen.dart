@@ -71,6 +71,7 @@ class _LoraScreenState extends State<LoraScreen> {
           const SnackBar(content: Text('모델 이름과 이미지 폴더를 입력하세요')));
       return;
     }
+    final messenger = ScaffoldMessenger.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -99,7 +100,6 @@ class _LoraScreenState extends State<LoraScreen> {
       ),
     );
     if (confirmed != true) return;
-    final messenger = ScaffoldMessenger.of(context);
     try {
       final jobId = await api.startLoraTrain({
         'image_dir': _imageDirCtrl.text,

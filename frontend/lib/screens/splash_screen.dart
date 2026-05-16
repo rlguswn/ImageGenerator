@@ -32,9 +32,7 @@ class _SplashScreenState extends State<SplashScreen> {
     _Step('서버 응답 대기 중...'),
     _Step('SD 모델 로딩 중...'),
   ];
-  int _currentStep = 0;
   String _errorMessage = '';
-  double _modelProgress = 0;
 
   @override
   void initState() {
@@ -94,7 +92,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void _setStepRunning(int i) => setState(() {
-        _currentStep = i;
         _steps[i].state = _StepState.running;
       });
 
@@ -131,7 +128,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.shade900.withOpacity(0.3),
+                    color: Colors.red.shade900.withValues(alpha: 0.3),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -195,6 +192,6 @@ enum _StepState { pending, running, done }
 
 class _Step {
   final String label;
-  _StepState state;
-  _Step(this.label, {this.state = _StepState.pending});
+  _StepState state = _StepState.pending;
+  _Step(this.label);
 }
