@@ -50,23 +50,23 @@ def find_flutter() -> str:
     log("Flutter를 찾을 수 없습니다. PATH 또는 경로를 확인하세요.", RED)
     sys.exit(1)
 
+def venv_python() -> str:
+    return str(ROOT / "venv" / "Scripts" / "python.exe")
+
 def ensure_venv():
-    venv_pip = ROOT / "venv" / "Scripts" / "pip.exe"
-    if not venv_pip.exists():
+    if not Path(venv_python()).exists():
         log("\n[0/3] 가상환경 생성 중...", YELLOW)
         run([sys.executable, "-m", "venv", str(ROOT / "venv")])
         req = ROOT / "requirements.txt"
         if req.exists():
-            run([str(venv_pip), "install", "-r", str(req), "--quiet"])
+            run([venv_python(), "-m", "pip", "install", "-r", str(req), "--quiet"])
         log("[0/3] 가상환경 준비 완료", GREEN)
 
 def build_backend():
     log("\n[1/3] Python 백엔드 빌드 중...", YELLOW)
-    pip = ROOT / "venv" / "Scripts" / "pip.exe"
-    pyinstaller = ROOT / "venv" / "Scripts" / "pyinstaller.exe"
-    run([str(pip), "install", "pyinstaller", "--quiet"])
+    run([venv_python(), "-m", "pip", "install", "pyinstaller", "--quiet"])
     run([
-        str(pyinstaller), str(ROOT / "backend.spec"),
+        venv_python(), "-m", "PyInstaller", str(ROOT / "backend.spec"),
         "--distpath", str(ROOT / "dist" / "backend"),
         "--workpath", str(ROOT / "build" / "pyinstaller"),
         "--noconfirm",

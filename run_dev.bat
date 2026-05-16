@@ -6,7 +6,7 @@
 if not exist "%~dp0venv\Scripts\python.exe" (
     echo [1/2] 가상환경 생성 중...
     python -m venv "%~dp0venv"
-    "%~dp0venv\Scripts\pip.exe" install -r "%~dp0requirements.txt" --quiet
+    "%~dp0venv\Scripts\python.exe" -m pip install -r "%~dp0requirements.txt" --quiet
     echo [1/2] 가상환경 준비 완료
 )
 
