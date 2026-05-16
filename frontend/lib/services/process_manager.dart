@@ -23,11 +23,12 @@ class ProcessManager {
     _attachListeners(onLog);
   }
 
-  // 개발 환경에서 venv Python으로 실행
+  // 개발 환경에서 venv Python으로 실행 (없으면 시스템 python 폴백)
   Future<void> startDev({void Function(String)? onLog}) async {
     final root = findProjectRoot();
     final sep = Platform.pathSeparator;
-    final python = '$root${sep}venv${sep}Scripts${sep}python.exe';
+    final venvPython = '$root${sep}venv${sep}Scripts${sep}python.exe';
+    final python = File(venvPython).existsSync() ? venvPython : 'python';
     final script = '$root${sep}backend${sep}main.py';
 
     _process = await Process.start(
