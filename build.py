@@ -153,8 +153,8 @@ def main():
 
     log(f"=== {APP_NAME} 빌드 시작 ===", CYAN)
 
+    ensure_venv()
     if not args.skip_backend:
-        ensure_venv()
         build_backend()
     if not args.skip_frontend:
         build_frontend()

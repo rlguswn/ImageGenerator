@@ -61,10 +61,9 @@ class _SplashScreenState extends State<SplashScreen> {
           throw Exception(
             '백엔드 실행 환경이 없습니다.\n\n'
             '다음 중 하나를 실행하세요:\n'
-            '  • python build.py          (전체 빌드)\n'
-            '  • python build.py --flutter-only 후\n'
-            '    venv 수동 생성: python -m venv venv\n'
-            '  • run_dev.bat              (자동 환경 구성)',
+            '  • python build.py              (전체 빌드)\n'
+            '  • python build.py --flutter-only\n'
+            '  • run_dev.bat                  (자동 환경 구성)',
           );
         }
         await processManager.startDev(onLog: (line) {
@@ -130,7 +129,7 @@ class _SplashScreenState extends State<SplashScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'SD Local 시작 중',
+                'ImageGenerator 시작 중',
                 style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
