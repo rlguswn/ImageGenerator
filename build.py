@@ -70,6 +70,7 @@ def build_frontend():
     if platform.system() == "Windows":
         subprocess.run(["taskkill", "/IM", "sd_local_app.exe", "/F"],
                        capture_output=True)
+    run([flutter, "pub", "get"], cwd=ROOT / "frontend")
     run([flutter, "build", "windows", "--release"], cwd=ROOT / "frontend")
     log("[2/3] Flutter 빌드 완료", GREEN)
 
