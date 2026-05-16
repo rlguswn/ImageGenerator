@@ -147,6 +147,7 @@ def main():
     args = parser.parse_args()
 
     if args.flutter_only:
+        ensure_venv()
         build_frontend()
         return
 
