@@ -10,6 +10,19 @@ if not exist "%~dp0venv\Scripts\python.exe" (
     echo [1/2] 가상환경 준비 완료
 )
 
+:: Flutter 실행 경로 자동 탐색
+set FLUTTER=
+if exist "D:\flutter\flutter\bin\flutter.bat" set FLUTTER=D:\flutter\flutter\bin\flutter.bat
+if exist "C:\flutter\bin\flutter.bat"         set FLUTTER=C:\flutter\bin\flutter.bat
+if "%FLUTTER%"=="" (
+    where flutter.bat >nul 2>&1 && set FLUTTER=flutter.bat
+)
+if "%FLUTTER%"=="" (
+    echo [오류] Flutter를 찾을 수 없습니다. PATH 또는 경로를 확인하세요.
+    pause
+    exit /b 1
+)
+
 echo [2/2] Flutter 앱 실행 중...
 cd /d "%~dp0frontend"
-D:\flutter\flutter\bin\flutter.bat run -d windows
+"%FLUTTER%" run -d windows
