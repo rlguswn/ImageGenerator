@@ -1,0 +1,24 @@
+# PyTorch - CUDA 12.4 빌드 (CUDA 12.6 드라이버 호환)
+# pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124
+
+# SD 엔진
+diffusers==0.38.0
+transformers==5.8.0
+accelerate==1.13.0
+peft==0.19.1
+safetensors==0.8.0rc0
+
+# API 서버
+fastapi==0.136.1
+uvicorn==0.46.0
+pydantic==2.13.4
+
+# 이미지 처리
+pillow==12.1.1
+
+# 시스템
+psutil==7.2.2
+httpx==0.28.1
+mcp==1.9.0

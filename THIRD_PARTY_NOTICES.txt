@@ -1,0 +1,247 @@
+================================================================================
+           ImageGenerator — Third-Party Software Notices
+================================================================================
+본 소프트웨어는 아래 오픈소스 라이브러리를 사용합니다.
+각 라이브러리의 저작권 및 라이선스 고지문은 다음과 같습니다.
+
+--------------------------------------------------------------------------------
+1. PyTorch (torch, torchvision) — BSD 3-Clause License
+   https://github.com/pytorch/pytorch
+--------------------------------------------------------------------------------
+Copyright (c) 2016-present, Facebook, Inc. (now Meta Platforms, Inc.)
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------------------------------------
+2. diffusers — Apache License 2.0
+   https://github.com/huggingface/diffusers
+--------------------------------------------------------------------------------
+Copyright 2022 The HuggingFace Team. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+--------------------------------------------------------------------------------
+3. transformers — Apache License 2.0
+   https://github.com/huggingface/transformers
+--------------------------------------------------------------------------------
+Copyright 2018 The HuggingFace Team. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License").
+Full license text: http://www.apache.org/licenses/LICENSE-2.0
+
+--------------------------------------------------------------------------------
+4. accelerate — Apache License 2.0
+   https://github.com/huggingface/accelerate
+--------------------------------------------------------------------------------
+Copyright 2021 The HuggingFace Team. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License").
+Full license text: http://www.apache.org/licenses/LICENSE-2.0
+
+--------------------------------------------------------------------------------
+5. peft — Apache License 2.0
+   https://github.com/huggingface/peft
+--------------------------------------------------------------------------------
+Copyright 2023 The HuggingFace Team. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License").
+Full license text: http://www.apache.org/licenses/LICENSE-2.0
+
+--------------------------------------------------------------------------------
+6. safetensors — Apache License 2.0
+   https://github.com/huggingface/safetensors
+--------------------------------------------------------------------------------
+Copyright 2022 The HuggingFace Team. All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License").
+Full license text: http://www.apache.org/licenses/LICENSE-2.0
+
+--------------------------------------------------------------------------------
+7. FastAPI — MIT License
+   https://github.com/fastapi/fastapi
+--------------------------------------------------------------------------------
+Copyright (c) 2018 Sebastián Ramírez
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------------
+8. uvicorn — BSD 3-Clause License
+   https://github.com/encode/uvicorn
+--------------------------------------------------------------------------------
+Copyright © 2017-present, Encode OSS Ltd. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES ARE DISCLAIMED.
+
+--------------------------------------------------------------------------------
+9. Pydantic — MIT License
+   https://github.com/pydantic/pydantic
+--------------------------------------------------------------------------------
+Copyright (c) 2017 to present Pydantic Services Inc. and individual contributors.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+--------------------------------------------------------------------------------
+10. Pillow — HPND License (Historical Permission Notice and Disclaimer)
+    https://github.com/python-pillow/Pillow
+--------------------------------------------------------------------------------
+Copyright © 1997-2011 by Secret Labs AB
+Copyright © 1995-2011 by Fredrik Lundh
+Copyright © 2010-present by Jeffrey A. Clark and contributors
+
+Permission to use, copy, modify, and distribute this software and its
+documentation for any purpose and without fee is hereby granted, provided that
+the above copyright notice appear in all copies.
+
+--------------------------------------------------------------------------------
+11. psutil — BSD 3-Clause License
+    https://github.com/giampaolo/psutil
+--------------------------------------------------------------------------------
+Copyright (c) 2009, Jay Loden, Dave Daeschler, Giampaolo Rodola. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES ARE DISCLAIMED.
+
+--------------------------------------------------------------------------------
+12. httpx — BSD 3-Clause License
+    https://github.com/encode/httpx
+--------------------------------------------------------------------------------
+Copyright © 2019, Encode OSS Ltd. All rights reserved.
+
+BSD 3-Clause License. Full text: https://github.com/encode/httpx/blob/master/LICENSE.md
+
+--------------------------------------------------------------------------------
+13. mcp — MIT License
+    https://github.com/anthropics/mcp
+--------------------------------------------------------------------------------
+Copyright (c) 2024 Anthropic, PBC.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND.
+
+--------------------------------------------------------------------------------
+14. Flutter — BSD 3-Clause License
+    https://github.com/flutter/flutter
+--------------------------------------------------------------------------------
+Copyright 2013 The Flutter Authors. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice,
+   this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+3. Neither the name "Flutter" nor the names of its contributors may be used
+   to endorse or promote products derived from this software without specific
+   prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES ARE DISCLAIMED.
+
+--------------------------------------------------------------------------------
+15. PyInstaller — GPLv2 with Bootloader Exception
+    https://github.com/pyinstaller/pyinstaller
+--------------------------------------------------------------------------------
+Copyright (c) 2010-2023, PyInstaller Development Team
+Copyright (c) 2005-2009, Giovanni Bajo
+
+GPLv2 라이선스이나, 배포된 애플리케이션(본 소프트웨어)의 소스코드에는
+GPL이 전파되지 않습니다 (Bootloader Exception 적용).
+Full license: https://github.com/pyinstaller/pyinstaller/blob/develop/COPYING.txt
+
+================================================================================
+참고: 위 라이브러리들의 전체 라이선스 텍스트는 각 GitHub 저장소에서 확인할 수 있습니다.
+AI 모델(Stable Diffusion 등)의 라이선스는 모델 배포처에서 별도 확인하시기 바랍니다.
+================================================================================
