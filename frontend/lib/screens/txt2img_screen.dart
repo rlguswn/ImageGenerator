@@ -37,6 +37,8 @@ class _Txt2ImgScreenState extends State<Txt2ImgScreen>
   List<Map<String, dynamic>> _presets = [];
   String? _selectedPresetId;
 
+  bool _modelLoaded = false;
+
   List<Uint8List> _images = [];
   String _generationTime = '';
   int _lastSeed = -1;
@@ -55,6 +57,7 @@ class _Txt2ImgScreenState extends State<Txt2ImgScreen>
     _restoreState();
     _loadPresets();
     _loadLoras();
+    _checkModelLoaded();
     genService.notifier.addListener(_onServiceChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final pending = regenNotifier.value;
@@ -187,6 +190,13 @@ class _Txt2ImgScreenState extends State<Txt2ImgScreen>
     } catch (_) {}
   }
 
+  Future<void> _checkModelLoaded() async {
+    try {
+      final h = await api.health();
+      if (mounted) setState(() => _modelLoaded = h['model_loaded'] as bool? ?? false);
+    } catch (_) {}
+  }
+
   void _applyPreset(Map<String, dynamic> preset) {
     setState(() {
       _promptCtrl.text = preset['prompt'] ?? '';
@@ -234,6 +244,13 @@ class _Txt2ImgScreenState extends State<Txt2ImgScreen>
   }
 
   Future<void> _generate() async {
+    if (!_modelLoaded) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('로드된 모델이 없습니다. 설정 탭에서 모델을 선택해 주세요.'),
+        duration: Duration(seconds: 3),
+      ));
+      return;
+    }
     SessionStorage.saveSession('txt2img', _promptCtrl.text, _negativeCtrl.text);
     final wh = _resolution.split('x');
     final loras = _selectedLoras.entries
