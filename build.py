@@ -50,6 +50,16 @@ def find_flutter() -> str:
     log("Flutter를 찾을 수 없습니다. PATH 또는 경로를 확인하세요.", RED)
     sys.exit(1)
 
+def ensure_venv():
+    venv_pip = ROOT / "venv" / "Scripts" / "pip.exe"
+    if not venv_pip.exists():
+        log("\n[0/3] 가상환경 생성 중...", YELLOW)
+        run([sys.executable, "-m", "venv", str(ROOT / "venv")])
+        req = ROOT / "requirements.txt"
+        if req.exists():
+            run([str(venv_pip), "install", "-r", str(req), "--quiet"])
+        log("[0/3] 가상환경 준비 완료", GREEN)
+
 def build_backend():
     log("\n[1/3] Python 백엔드 빌드 중...", YELLOW)
     pip = ROOT / "venv" / "Scripts" / "pip.exe"
@@ -144,6 +154,7 @@ def main():
     log(f"=== {APP_NAME} 빌드 시작 ===", CYAN)
 
     if not args.skip_backend:
+        ensure_venv()
         build_backend()
     if not args.skip_frontend:
         build_frontend()
