@@ -1,0 +1,29 @@
+{
+  "safety_checker": {
+    "enabled": false,
+    "checkpoint": "CompVis/stable-diffusion-safety-checker",
+    "feature_extractor": "openai/clip-vit-base-patch32"
+  },
+  "prompt_filter": {
+    "enabled": true,
+    "action": "block",
+    "keywords": [
+      "child", "children", "minor", "minors", "underage",
+      "loli", "lolita", "shota", "shotacon", "lolicon",
+      "kid", "kids", "toddler", "infant",
+      "preteen", "pre-teen", "young girl", "young boy", "little girl", "little boy",
+      "school girl", "schoolgirl", "jailbait",
+      "cp", "csam",
+      "rape", "sexual assault", "molest", "molestation",
+      "non-consensual", "nonconsensual", "without consent",
+      "revenge porn", "deepfake nude", "deepfake sex", "deepfake porn"
+    ],
+    "error_message": "프롬프트에 허용되지 않는 키워드가 포함되어 있습니다."
+  },
+  "ai_metadata": {
+    "enabled": true,
+    "png_info_key": "AI-Generated",
+    "png_info_value": "true",
+    "software_tag": "ImageGenerator"
+  }
+}
