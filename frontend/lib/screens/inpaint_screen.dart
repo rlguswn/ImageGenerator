@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -41,7 +42,7 @@ class _InpaintScreenState extends State<InpaintScreen> {
   final _promptCtrl = TextEditingController();
   final _negativeCtrl = TextEditingController();
   final _seedCtrl = TextEditingController(text: '-1');
-  double _steps = 20;
+  double _steps = 15;
   double _cfgScale = 7.0;
   double _denoisingStrength = 0.75;
   String _sampler = 'DPM++ 2M Karras';
@@ -419,6 +420,27 @@ class _InpaintScreenState extends State<InpaintScreen> {
     );
   }
 
+  /// 원본 비율을 유지하면서 VRAM 안전한 생성 해상도 계산 (64의 배수)
+  (int, int) _calcGenResolution() {
+    final w = _imageActualSize.width;
+    final h = _imageActualSize.height;
+    if (w == 0 || h == 0) return (512, 512);
+
+    const maxPixels = 768 * 768; // SDXL 8GB VRAM 안전 상한
+    int genW, genH;
+    if (w * h <= maxPixels) {
+      genW = (w / 64).round() * 64;
+      genH = (h / 64).round() * 64;
+    } else {
+      final ratio = w / h;
+      final newH = math.sqrt(maxPixels / ratio);
+      final newW = newH * ratio;
+      genW = ((newW / 64).round() * 64).clamp(64, 1536);
+      genH = ((newH / 64).round() * 64).clamp(64, 1536);
+    }
+    return (genW, genH);
+  }
+
   Future<void> _generate() async {
     Uint8List maskBytes;
     try {
@@ -433,6 +455,8 @@ class _InpaintScreenState extends State<InpaintScreen> {
 
     if (mounted) setState(() => _viewMode = 'edit');
 
+    final (genW, genH) = _calcGenResolution();
+
     await genService.run(
       mode: 'inpaint',
       apiCall: () => api.inpaint({
@@ -441,8 +465,8 @@ class _InpaintScreenState extends State<InpaintScreen> {
         'image_base64': base64Encode(_inputImage!),
         'mask_base64': base64Encode(maskBytes),
         'denoising_strength': _denoisingStrength,
-        'width': _imageActualSize.width.toInt(),
-        'height': _imageActualSize.height.toInt(),
+        'width': genW,
+        'height': genH,
         'steps': _steps.toInt(),
         'cfg_scale': _cfgScale,
         'seed': int.tryParse(_seedCtrl.text) ?? -1,
