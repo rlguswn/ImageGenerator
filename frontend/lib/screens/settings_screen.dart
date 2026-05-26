@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import '../services/api_service.dart';
 import '../services/app_paths.dart';
 import '../services/dev_mode.dart';
+import '../services/process_manager.dart';
 import '../services/session_storage.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -37,6 +38,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _swapVram = false;
   bool _swapCpu = false;
   bool _swapping = false;
+  bool _restarting = false;
+  String _restartStatus = '';
 
   @override
   void initState() {
@@ -118,6 +121,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       });
     } catch (_) {}
+  }
+
+  Future<void> _restartBackend() async {
+    if (_restarting) return;
+    setState(() {
+      _restarting = true;
+      _restartStatus = '백엔드 종료 중...';
+    });
+
+    try {
+      processManager.stop();
+      await Future.delayed(const Duration(milliseconds: 600));
+
+      setState(() => _restartStatus = '백엔드 시작 중...');
+
+      if (devModeNotifier.value) {
+        await processManager.startDev(
+          onLog: (line) {
+            if (mounted) setState(() => _restartStatus = line);
+          },
+        );
+      } else {
+        await processManager.start(
+          onLog: (line) {
+            if (mounted) setState(() => _restartStatus = line);
+          },
+        );
+      }
+
+      setState(() => _restartStatus = '서버 응답 대기 중...');
+      final ok = await processManager.waitUntilReady(
+        timeoutSeconds: 60,
+        onStatus: (s) {
+          if (mounted) setState(() => _restartStatus = s);
+        },
+      );
+
+      if (!mounted) return;
+      if (ok) {
+        setState(() => _restartStatus = '재시작 완료');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('백엔드가 재시작됐습니다')),
+        );
+      } else {
+        setState(() => _restartStatus = '시작 실패 (타임아웃)');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('백엔드 응답 없음 — 로그를 확인하세요')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _restartStatus = '오류: $e');
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('재시작 실패: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _restarting = false);
+    }
   }
 
   Future<void> _swapModel() async {
@@ -275,6 +336,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _textField('포트 번호', _portCtrl, hint: '8000'),
           _toggleRow('자동 포트 탐색', _autoPortSearch,
               (v) => setState(() => _autoPortSearch = v)),
+          const SizedBox(height: 12),
+          _buildRestartSection(),
           const SizedBox(height: 24),
 
           // ── 모델 교체 ──────────────────────────────────────────────
@@ -456,6 +519,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8)),
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRestartSection() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF16213E),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('백엔드 재시작',
+                    style: TextStyle(color: Colors.white70, fontSize: 13)),
+                if (_restarting && _restartStatus.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      _restartStatus,
+                      style: const TextStyle(
+                          color: Colors.white38, fontSize: 11),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton.icon(
+            onPressed: _restarting ? null : _restartBackend,
+            icon: _restarting
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.restart_alt, size: 16),
+            label: Text(_restarting ? '재시작 중...' : '재시작'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0F3460),
+              foregroundColor: Colors.white,
+              disabledBackgroundColor:
+                  const Color(0xFF0F3460).withValues(alpha: 0.4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
           ),
         ],
