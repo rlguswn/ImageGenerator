@@ -5,7 +5,7 @@
     "feature_extractor": "openai/clip-vit-base-patch32"
   },
   "prompt_filter": {
-    "enabled": true,
+    "enabled": false,
     "action": "block",
     "keywords": [
       "child", "children", "minor", "minors", "underage",
