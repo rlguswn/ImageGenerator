@@ -94,10 +94,13 @@ def package():
         sys.exit(1)
     shutil.copytree(flutter_release, OUT_DIR, dirs_exist_ok=True)
 
-    # 백엔드 복사
+    # 백엔드 복사 (robocopy: 잠긴 파일도 강제 덮어쓰기)
     backend_dist = ROOT / "dist" / "backend" / "sd_backend"
     if backend_dist.exists():
-        shutil.copytree(backend_dist, OUT_DIR / "sd_backend", dirs_exist_ok=True)
+        subprocess.run([
+            "robocopy", str(backend_dist), str(OUT_DIR / "sd_backend"),
+            "/E", "/IS", "/IT", "/NFL", "/NDL", "/NP",
+        ])
         # safety.json 복사
         safety_src = ROOT / "backend" / "safety.json"
         safety_dst = OUT_DIR / "sd_backend" / "backend" / "safety.json"
