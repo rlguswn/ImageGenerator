@@ -11,6 +11,8 @@ class ProcessManager {
 
   // 배포된 앱에서 번들된 Python 백엔드 실행
   Future<void> start({void Function(String)? onLog}) async {
+    await _killExisting();
+
     final exeDir = File(Platform.resolvedExecutable).parent.path;
     final sep = Platform.pathSeparator;
     final backendExe = '$exeDir${sep}sd_backend${sep}sd_backend.exe';
@@ -21,6 +23,17 @@ class ProcessManager {
       workingDirectory: exeDir,
     );
     _attachListeners(onLog);
+  }
+
+  Future<void> _killExisting() async {
+    try {
+      await Process.run(
+        'taskkill',
+        ['/F', '/IM', 'sd_backend.exe'],
+        runInShell: true,
+      );
+      await Future.delayed(const Duration(milliseconds: 500));
+    } catch (_) {}
   }
 
   // 개발 환경에서 venv Python으로 실행 (없으면 시스템 python 폴백)
