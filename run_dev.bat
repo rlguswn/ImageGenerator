@@ -26,3 +26,8 @@ if "%FLUTTER%"=="" (
 echo [2/2] Flutter 앱 실행 중...
 cd /d "%~dp0frontend"
 "%FLUTTER%" run -d windows
+if errorlevel 1 (
+    echo.
+    echo [오류] Flutter 실행 실패
+    pause
+)

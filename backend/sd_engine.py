@@ -119,6 +119,18 @@ class SDEngine:
             self.pipeline.enable_attention_slicing()
             self.pipeline.enable_vae_slicing()
 
+        # xFormers: 설치된 경우 항상 활성화 (VRAM 절약 + 속도 향상)
+        try:
+            self.pipeline.enable_xformers_memory_efficient_attention()
+        except Exception:
+            pass  # xformers 미설치 시 무시
+
+        # VAE 타일링: 큰 이미지 디코딩 속도 개선
+        try:
+            self.pipeline.enable_vae_tiling()
+        except Exception:
+            pass
+
         if is_xl:
             self.img2img_pipeline = StableDiffusionXLImg2ImgPipeline(
                 vae=self.pipeline.vae,
@@ -387,7 +399,7 @@ class SDEngine:
         denoising_strength: float = 0.75,
         width: int = 512,
         height: int = 512,
-        steps: int = 20,
+        steps: int = 15,
         cfg_scale: float = 7.0,
         seed: int = -1,
         clip_skip: int = 1,
