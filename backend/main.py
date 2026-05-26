@@ -1,6 +1,7 @@
 import io
 import json
 import time
+import traceback
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -17,6 +18,23 @@ from port_check import find_available_port
 from logger import get_logger
 
 app = FastAPI(title="SD Local API")
+
+
+def _raise_for_exception(e: Exception, context: str):
+    msg = str(e)
+    if "out of memory" in msg.lower() or isinstance(e, torch.cuda.OutOfMemoryError):
+        free = used = total = 0
+        if torch.cuda.is_available():
+            free = torch.cuda.mem_get_info()[0] // 1024 ** 2
+            total = torch.cuda.get_device_properties(0).total_memory // 1024 ** 2
+            used = total - free
+        torch.cuda.empty_cache()
+        raise HTTPException(
+            status_code=507,
+            detail=f"VRAM 부족 (사용 중 {used}MB / 전체 {total}MB). "
+                   "설정에서 VRAM 최적화를 켜거나 해상도·배치 크기를 줄이세요.",
+        )
+    raise HTTPException(status_code=500, detail=msg)
 
 CONFIG_PATH = Path("config.json")
 SAFETY_PATH = Path(__file__).parent / "safety.json"
@@ -229,8 +247,8 @@ def load_model(req: LoadModelRequest):
             engine.remove_safety_checker()
         return {"status": "ok", "messages": messages}
     except Exception as e:
-        log.error(f"모델 로딩 실패: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        log.error(f"모델 로딩 실패: {e}\n{traceback.format_exc()}")
+        _raise_for_exception(e, "모델 로딩")
 
 
 @app.post("/txt2img")
@@ -265,7 +283,8 @@ def txt2img(req: Txt2ImgRequest):
             progress_callback=on_progress,
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        log.error(f"txt2img 생성 실패: {e}\n{traceback.format_exc()}")
+        _raise_for_exception(e, "txt2img")
 
     generation_time = round(time.time() - start, 1)
     log.info(f"txt2img 생성 완료 ({generation_time}s) seed:{seed}")
@@ -335,8 +354,8 @@ def img2img(req: Img2ImgRequest):
             progress_callback=on_progress,
         )
     except Exception as e:
-        log.error(f"img2img 생성 실패: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        log.error(f"img2img 생성 실패: {e}\n{traceback.format_exc()}")
+        _raise_for_exception(e, "img2img")
 
     generation_time = round(time.time() - start, 1)
     log.info(f"img2img 생성 완료 ({generation_time}s) seed:{seed}")
@@ -416,8 +435,8 @@ def inpaint(req: InpaintRequest):
             progress_callback=on_progress,
         )
     except Exception as e:
-        log.error(f"inpaint 생성 실패: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        log.error(f"inpaint 생성 실패: {e}\n{traceback.format_exc()}")
+        _raise_for_exception(e, "inpaint")
 
     generation_time = round(time.time() - start, 1)
     log.info(f"inpaint 생성 완료 ({generation_time}s) seed:{seed}")
