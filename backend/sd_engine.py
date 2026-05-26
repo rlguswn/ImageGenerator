@@ -9,6 +9,9 @@ from diffusers import (
     StableDiffusionPipeline,
     StableDiffusionImg2ImgPipeline,
     StableDiffusionInpaintPipeline,
+    StableDiffusionXLPipeline,
+    StableDiffusionXLImg2ImgPipeline,
+    StableDiffusionXLInpaintPipeline,
     DPMSolverMultistepScheduler,
 )
 from PIL import Image
@@ -24,14 +27,36 @@ SAMPLERS = {
 
 class SDEngine:
     def __init__(self):
-        self.pipeline: Optional[StableDiffusionPipeline] = None
-        self.img2img_pipeline: Optional[StableDiffusionImg2ImgPipeline] = None
-        self.inpaint_pipeline: Optional[StableDiffusionInpaintPipeline] = None
+        self.pipeline = None
+        self.img2img_pipeline = None
+        self.inpaint_pipeline = None
         self.pipeline_mode: str = "default"
+        self.model_type: str = "sd"  # "sd" | "sdxl"
         self.loaded_model_path: Optional[str] = None
         self.loaded_loras: dict[str, float] = {}
         self._cancel_event = threading.Event()
         self._lock = threading.Lock()
+
+    @staticmethod
+    def _is_sdxl(model_path: str) -> bool:
+        """safetensors 헤더의 키를 보고 SDXL 여부를 판별한다."""
+        try:
+            from safetensors import safe_open
+            with safe_open(model_path, framework="pt", device="cpu") as f:
+                keys = list(f.keys())[:200]
+            # 원본 CompVis 포맷 또는 diffusers 포맷 모두 커버
+            sdxl_patterns = ("conditioner.embedders.1", "text_encoder_2.", "1.transformer.")
+            return any(any(p in k for p in sdxl_patterns) for k in keys)
+        except Exception:
+            pass
+        # fallback 1: 파일명
+        if "xl" in Path(model_path).stem.lower():
+            return True
+        # fallback 2: 파일 크기 — SDXL fp16은 보통 5.5 GB 이상
+        try:
+            return Path(model_path).stat().st_size > 5_500_000_000
+        except Exception:
+            return False
 
     @staticmethod
     def _cache_dir(model_path: str, precision: str) -> Path:
@@ -54,21 +79,31 @@ class SDEngine:
         cache_dir = self._cache_dir(model_path, precision)
         start = time.time()
 
+        is_xl = self._is_sdxl(model_path)
+        self.model_type = "sdxl" if is_xl else "sd"
+        PipelineCls = StableDiffusionXLPipeline if is_xl else StableDiffusionPipeline
+        log(f"모델 타입: {'SDXL' if is_xl else 'SD'}")
+
+        sd_kwargs = {} if is_xl else {
+            "safety_checker": None,
+            "requires_safety_checker": False,
+            "feature_extractor": None,
+        }
+
         if cache_dir.exists() and (cache_dir / "model_index.json").exists():
             log("캐시에서 모델 로딩 중...")
-            self.pipeline = StableDiffusionPipeline.from_pretrained(
+            self.pipeline = PipelineCls.from_pretrained(
                 str(cache_dir),
                 torch_dtype=dtype,
-                safety_checker=None,
-                requires_safety_checker=False,
+                local_files_only=True,
+                **sd_kwargs,
             )
         else:
-            log("SD 모델 로딩 중 (최초 실행, 캐시 생성)...")
-            self.pipeline = StableDiffusionPipeline.from_single_file(
+            log(f"{'SDXL' if is_xl else 'SD'} 모델 로딩 중 (최초 실행, 캐시 생성)...")
+            self.pipeline = PipelineCls.from_single_file(
                 model_path,
                 torch_dtype=dtype,
-                safety_checker=None,
-                requires_safety_checker=False,
+                **sd_kwargs,
             )
             log("캐시 저장 중...")
             cache_dir.mkdir(parents=True, exist_ok=True)
@@ -84,16 +119,27 @@ class SDEngine:
             self.pipeline.enable_attention_slicing()
             self.pipeline.enable_vae_slicing()
 
-        self.img2img_pipeline = StableDiffusionImg2ImgPipeline(
-            vae=self.pipeline.vae,
-            text_encoder=self.pipeline.text_encoder,
-            tokenizer=self.pipeline.tokenizer,
-            unet=self.pipeline.unet,
-            scheduler=self.pipeline.scheduler,
-            safety_checker=None,
-            feature_extractor=None,
-            requires_safety_checker=False,
-        )
+        if is_xl:
+            self.img2img_pipeline = StableDiffusionXLImg2ImgPipeline(
+                vae=self.pipeline.vae,
+                text_encoder=self.pipeline.text_encoder,
+                text_encoder_2=self.pipeline.text_encoder_2,
+                tokenizer=self.pipeline.tokenizer,
+                tokenizer_2=self.pipeline.tokenizer_2,
+                unet=self.pipeline.unet,
+                scheduler=self.pipeline.scheduler,
+            )
+        else:
+            self.img2img_pipeline = StableDiffusionImg2ImgPipeline(
+                vae=self.pipeline.vae,
+                text_encoder=self.pipeline.text_encoder,
+                tokenizer=self.pipeline.tokenizer,
+                unet=self.pipeline.unet,
+                scheduler=self.pipeline.scheduler,
+                safety_checker=None,
+                feature_extractor=None,
+                requires_safety_checker=False,
+            )
         if not cpu_offload:
             self.img2img_pipeline = self.img2img_pipeline.to("cuda")
 
@@ -113,12 +159,15 @@ class SDEngine:
             if progress_callback:
                 progress_callback(msg)
 
-        from transformers import CLIPFeatureExtractor
+        try:
+            from transformers import CLIPImageProcessor as _FeatureExtractor
+        except ImportError:
+            from transformers import CLIPFeatureExtractor as _FeatureExtractor
         from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
 
         log("Safety checker 로딩 중...")
         checker = StableDiffusionSafetyChecker.from_pretrained(checkpoint)
-        extractor = CLIPFeatureExtractor.from_pretrained(feature_extractor)
+        extractor = _FeatureExtractor.from_pretrained(feature_extractor)
 
         for pipe in [self.pipeline, self.img2img_pipeline, self.inpaint_pipeline]:
             if pipe is not None:
@@ -136,9 +185,11 @@ class SDEngine:
         if sampler_name in SAMPLERS:
             pipeline.scheduler = SAMPLERS[sampler_name](pipeline.scheduler.config)
 
-    def _make_callback(self, total_steps: int, progress_callback: Optional[Callable]):
+    def _make_callback(self, steps: int, progress_callback: Optional[Callable],
+                       image_idx: int = 0, total_images: int = 1):
         step_times = []
         start_time = time.time()
+        total_steps = steps * total_images
 
         def callback(pipe, step_index, timestep, callback_kwargs):
             if self._cancel_event.is_set():
@@ -149,11 +200,14 @@ class SDEngine:
             step_times.append(now - start_time)
 
             if progress_callback and len(step_times) > 1:
+                global_step = image_idx * steps + step_index + 1
                 avg_step_time = (step_times[-1] - step_times[0]) / (len(step_times) - 1)
-                remaining = avg_step_time * (total_steps - step_index)
+                remaining = avg_step_time * (total_steps - global_step)
                 progress_callback({
-                    "step": step_index + 1,
+                    "step": global_step,
                     "total": total_steps,
+                    "image": image_idx + 1,
+                    "total_images": total_images,
                     "elapsed": now - start_time,
                     "eta": remaining,
                 })
@@ -212,24 +266,30 @@ class SDEngine:
 
         if seed == -1:
             seed = torch.randint(0, 2**32 - 1, (1,)).item()
-        generator = torch.Generator("cuda").manual_seed(seed)
 
-        callback = self._make_callback(steps, progress_callback)
+        extra = {} if self.model_type == "sdxl" else {"clip_skip": clip_skip if clip_skip > 1 else None}
+        images = []
+        for i in range(batch_size):
+            if self._cancel_event.is_set():
+                break
+            generator = torch.Generator("cuda").manual_seed(seed + i)
+            callback = self._make_callback(steps, progress_callback,
+                                           image_idx=i, total_images=batch_size)
+            result = self.pipeline(
+                prompt=prompt,
+                negative_prompt=negative_prompt,
+                width=width,
+                height=height,
+                num_inference_steps=steps,
+                guidance_scale=cfg_scale,
+                num_images_per_prompt=1,
+                generator=generator,
+                callback_on_step_end=callback,
+                **extra,
+            )
+            images.extend(result.images)
 
-        result = self.pipeline(
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            width=width,
-            height=height,
-            num_inference_steps=steps,
-            guidance_scale=cfg_scale,
-            num_images_per_prompt=batch_size,
-            generator=generator,
-            clip_skip=clip_skip if clip_skip > 1 else None,
-            callback_on_step_end=callback,
-        )
-
-        return result.images, seed
+        return images, seed
 
     def img2img(
         self,
@@ -264,39 +324,56 @@ class SDEngine:
 
         if seed == -1:
             seed = torch.randint(0, 2**32 - 1, (1,)).item()
-        generator = torch.Generator("cuda").manual_seed(seed)
 
-        callback = self._make_callback(steps, progress_callback)
+        extra = {} if self.model_type == "sdxl" else {"clip_skip": clip_skip if clip_skip > 1 else None}
+        images = []
+        for i in range(batch_size):
+            if self._cancel_event.is_set():
+                break
+            generator = torch.Generator("cuda").manual_seed(seed + i)
+            callback = self._make_callback(steps, progress_callback,
+                                           image_idx=i, total_images=batch_size)
+            result = self.img2img_pipeline(
+                prompt=prompt,
+                negative_prompt=negative_prompt,
+                image=init_image,
+                strength=denoising_strength,
+                num_inference_steps=steps,
+                guidance_scale=cfg_scale,
+                num_images_per_prompt=1,
+                generator=generator,
+                callback_on_step_end=callback,
+                **extra,
+            )
+            images.extend(result.images)
 
-        result = self.img2img_pipeline(
-            prompt=prompt,
-            negative_prompt=negative_prompt,
-            image=init_image,
-            strength=denoising_strength,
-            num_inference_steps=steps,
-            guidance_scale=cfg_scale,
-            num_images_per_prompt=batch_size,
-            generator=generator,
-            clip_skip=clip_skip if clip_skip > 1 else None,
-            callback_on_step_end=callback,
-        )
-
-        return result.images, seed
+        return images, seed
 
     def switch_to_inpaint(self, cpu_offload: bool = False):
         """기존 파이프라인 컴포넌트를 공유해 인페인트 파이프라인을 구성 (추가 VRAM 없음)."""
         if not self.pipeline:
             raise RuntimeError("먼저 모델을 로딩하세요")
-        self.inpaint_pipeline = StableDiffusionInpaintPipeline(
-            vae=self.pipeline.vae,
-            text_encoder=self.pipeline.text_encoder,
-            tokenizer=self.pipeline.tokenizer,
-            unet=self.pipeline.unet,
-            scheduler=self.pipeline.scheduler,
-            safety_checker=None,
-            feature_extractor=None,
-            requires_safety_checker=False,
-        )
+        if self.model_type == "sdxl":
+            self.inpaint_pipeline = StableDiffusionXLInpaintPipeline(
+                vae=self.pipeline.vae,
+                text_encoder=self.pipeline.text_encoder,
+                text_encoder_2=self.pipeline.text_encoder_2,
+                tokenizer=self.pipeline.tokenizer,
+                tokenizer_2=self.pipeline.tokenizer_2,
+                unet=self.pipeline.unet,
+                scheduler=self.pipeline.scheduler,
+            )
+        else:
+            self.inpaint_pipeline = StableDiffusionInpaintPipeline(
+                vae=self.pipeline.vae,
+                text_encoder=self.pipeline.text_encoder,
+                tokenizer=self.pipeline.tokenizer,
+                unet=self.pipeline.unet,
+                scheduler=self.pipeline.scheduler,
+                safety_checker=None,
+                feature_extractor=None,
+                requires_safety_checker=False,
+            )
         if not cpu_offload:
             self.inpaint_pipeline = self.inpaint_pipeline.to("cuda")
         self.pipeline_mode = "inpaint"
@@ -329,6 +406,8 @@ class SDEngine:
 
         self._set_sampler(self.inpaint_pipeline, sampler)
 
+        # 원본 크기 보존 — 생성 후 복원
+        orig_size = init_image.size  # (orig_w, orig_h)
         init_image = init_image.convert("RGB").resize((width, height))
         mask_image = mask_image.convert("L").resize((width, height))
 
@@ -336,8 +415,9 @@ class SDEngine:
             seed = torch.randint(0, 2**32 - 1, (1,)).item()
         generator = torch.Generator("cuda").manual_seed(seed)
 
-        callback = self._make_callback(steps, progress_callback)
+        callback = self._make_callback(steps, progress_callback, image_idx=0, total_images=1)
 
+        extra = {} if self.model_type == "sdxl" else {"clip_skip": clip_skip if clip_skip > 1 else None}
         result = self.inpaint_pipeline(
             prompt=prompt,
             negative_prompt=negative_prompt,
@@ -347,11 +427,17 @@ class SDEngine:
             num_inference_steps=steps,
             guidance_scale=cfg_scale,
             generator=generator,
-            clip_skip=clip_skip if clip_skip > 1 else None,
             callback_on_step_end=callback,
+            **extra,
         )
 
-        return result.images, seed
+        # 원본 크기로 복원
+        out_images = result.images
+        if orig_size != (width, height):
+            from PIL import Image as _Image
+            out_images = [img.resize(orig_size, _Image.LANCZOS) for img in out_images]
+
+        return out_images, seed
 
     def cancel(self):
         self._cancel_event.set()
