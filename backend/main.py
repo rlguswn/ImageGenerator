@@ -1,8 +1,20 @@
 import io
 import json
+import os
+import sys
 import time
 import traceback
 from datetime import datetime
+
+# subprocess/PyInstaller 환경에서 sys.stderr 핸들이 무효화되면
+# tqdm이 [Errno 22] Invalid argument를 내뱉으므로 미리 패치
+try:
+    sys.stderr.flush()
+except OSError:
+    try:
+        sys.stderr = open(os.devnull, "w")
+    except Exception:
+        pass
 from pathlib import Path
 from typing import Optional
 
