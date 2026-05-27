@@ -50,6 +50,9 @@ class _SdLocalAppState extends State<SdLocalApp> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    // 동기적으로 taskkill 호출 (dispose는 async 불가)
+    Process.runSync('taskkill', ['/F', '/IM', 'sd_backend.exe'],
+        runInShell: true);
     processManager.stop();
     super.dispose();
   }

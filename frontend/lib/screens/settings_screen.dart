@@ -39,6 +39,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _swapCpu = false;
   bool _swapping = false;
   bool _restarting = false;
+  bool _stopping = false;
   String _restartStatus = '';
 
   @override
@@ -121,6 +122,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
         }
       });
     } catch (_) {}
+  }
+
+  Future<void> _stopBackend() async {
+    if (_stopping) return;
+    setState(() => _stopping = true);
+    try {
+      await processManager.stop();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('백엔드가 종료됐습니다')),
+      );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('종료 실패: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _stopping = false);
+    }
   }
 
   Future<void> _restartBackend() async {
@@ -556,7 +576,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const SizedBox(width: 12),
           ElevatedButton.icon(
-            onPressed: _restarting ? null : _restartBackend,
+            onPressed: (_stopping || _restarting) ? null : _stopBackend,
+            icon: _stopping
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.stop_circle_outlined, size: 16),
+            label: Text(_stopping ? '종료 중...' : '종료'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3D0000),
+              foregroundColor: Colors.white,
+              disabledBackgroundColor:
+                  const Color(0xFF3D0000).withValues(alpha: 0.4),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+          ),
+          const SizedBox(width: 8),
+          ElevatedButton.icon(
+            onPressed: (_restarting || _stopping) ? null : _restartBackend,
             icon: _restarting
                 ? const SizedBox(
                     width: 14,
