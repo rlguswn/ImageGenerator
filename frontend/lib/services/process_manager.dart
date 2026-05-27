@@ -79,11 +79,26 @@ class ProcessManager {
     return false;
   }
 
-  void stop() {
+  Future<void> stop() async {
+    // Flutter가 관리하는 프로세스 핸들 종료
     if (_process != null) {
       _process!.kill(ProcessSignal.sigkill);
       _process = null;
     }
+    // 외부에서 실행된 백엔드도 강제 종료
+    try {
+      await Process.run('taskkill', ['/F', '/IM', 'sd_backend.exe'],
+          runInShell: true);
+    } catch (_) {}
+    // 개발 모드: python으로 실행된 main.py 프로세스 종료
+    try {
+      await Process.run(
+          'wmic',
+          ['process', 'where',
+           'commandline like "%backend\\\\main.py%"',
+           'delete'],
+          runInShell: true);
+    } catch (_) {}
   }
 
   bool get isRunning => _process != null;
