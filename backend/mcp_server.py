@@ -181,7 +181,7 @@ async def list_tools() -> list[types.Tool]:
 
 @server.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
-    async with httpx.AsyncClient(timeout=600.0) as client:
+    async with httpx.AsyncClient(timeout=3600.0) as client:
         try:
             if name == "get_health":
                 r = await client.get(f"{BASE_URL}/health")
