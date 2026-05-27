@@ -235,13 +235,27 @@ def health():
 @app.post("/model/load")
 def load_model(req: LoadModelRequest):
     messages = []
-    log.info(f"모델 로딩 시작: {req.model_path}")
+    # 파일명만 넘어온 경우 base_model_path 앞에 붙이고 절대경로로 변환
+    # diffusers 0.30+ 는 from_single_file에 절대경로를 요구함
+    model_path = req.model_path
+    p = Path(model_path)
+    if not p.is_absolute() and not p.exists():
+        cfg = load_config()
+        base_dir = cfg.get("model", {}).get("base_model_path", "models/base")
+        candidate = Path(base_dir) / p.name
+        if candidate.exists():
+            model_path = str(candidate.resolve())
+        else:
+            model_path = str(p.resolve())
+    else:
+        model_path = str(p.resolve())
+    log.info(f"모델 로딩 시작: {model_path}")
     try:
         def on_progress(msg):
             messages.append(msg)
             log.info(msg)
         engine.load_model(
-            model_path=req.model_path,
+            model_path=model_path,
             precision=req.precision,
             vram_optimization=req.vram_optimization,
             cpu_offload=req.cpu_offload,
