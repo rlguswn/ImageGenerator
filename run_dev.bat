@@ -1,13 +1,12 @@
 @echo off
-chcp 65001 > nul
-title ImageGenerator - 개발 모드
+title ImageGenerator - Dev Mode
 
-:: 기존 백엔드 프로세스 종료
+:: Kill existing backend
 taskkill /F /IM sd_backend.exe > nul 2>&1
 wmic process where "commandline like '%%backend\\main.py%%'" delete > nul 2>&1
 timeout /t 1 /nobreak > nul
 
-:: Flutter 경로 탐색
+:: Find Flutter
 set FLUTTER=
 if exist "D:\flutter\flutter\bin\flutter.bat" set FLUTTER=D:\flutter\flutter\bin\flutter.bat
 if exist "C:\flutter\bin\flutter.bat"         set FLUTTER=C:\flutter\bin\flutter.bat
@@ -16,14 +15,14 @@ if "%FLUTTER%"=="" (
 )
 if "%FLUTTER%"=="" (
     echo.
-    echo [오류] Flutter를 찾을 수 없습니다. PATH 또는 경로를 확인하세요.
+    echo [ERROR] Flutter not found. Check PATH or install location.
     pause
     exit /b 1
 )
 
 echo Flutter: %FLUTTER%
 echo.
-echo Flutter 앱 실행 중... (백엔드는 앱이 자동으로 시작합니다)
+echo Starting Flutter app... (backend will be launched automatically)
 echo.
 
 cd /d "%~dp0frontend"
@@ -31,6 +30,6 @@ cd /d "%~dp0frontend"
 
 if errorlevel 1 (
     echo.
-    echo [오류] Flutter 실행 실패
+    echo [ERROR] Flutter failed to start
     pause
 )
