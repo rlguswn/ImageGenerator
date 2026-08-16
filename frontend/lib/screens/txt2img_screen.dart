@@ -112,6 +112,9 @@ class _Txt2ImgScreenState extends State<Txt2ImgScreen>
           SnackBar(content: Text('오류: ${s.errorMessage}')),
         );
       }
+    } else if (s.isActive && s.images.length != _images.length) {
+      // 배치 생성 도중 완성된 이미지가 도착할 때마다 갱신
+      if (mounted) setState(() => _images = List<Uint8List>.from(s.images));
     }
   }
 

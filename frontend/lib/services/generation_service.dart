@@ -90,10 +90,12 @@ class GenerationService {
       try {
         final p = await api.getProgress();
         if (!state.isActive) return;
+        final partialImages = _parseImages(p);
         notifier.value = state.copyWith(
           step: p['step'] as int? ?? state.step,
           total: p['total'] as int? ?? state.total,
           eta: (p['eta'] as num?)?.toDouble() ?? state.eta,
+          images: partialImages.isNotEmpty ? partialImages : null,
         );
       } catch (_) {}
     });
