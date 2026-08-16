@@ -46,7 +46,8 @@ class _SplashScreenState extends State<SplashScreen> {
       // Step 0: Python 프로세스 시작
       _setStepRunning(0);
       final exeDir = File(Platform.resolvedExecutable).parent.path;
-      final backendExe = '$exeDir${Platform.pathSeparator}sd_backend${Platform.pathSeparator}sd_backend.exe';
+      final backendBinary = Platform.isWindows ? 'sd_backend.exe' : 'sd_backend';
+      final backendExe = '$exeDir${Platform.pathSeparator}sd_backend${Platform.pathSeparator}$backendBinary';
       final isRelease = File(backendExe).existsSync();
       if (isRelease) {
         await processManager.start(onLog: (line) {
@@ -56,7 +57,9 @@ class _SplashScreenState extends State<SplashScreen> {
         // 개발 모드: venv 존재 여부 먼저 확인
         final root = findProjectRoot();
         final sep = Platform.pathSeparator;
-        final venvPython = '$root${sep}venv${sep}Scripts${sep}python.exe';
+        final venvPython = Platform.isWindows
+            ? '$root${sep}venv${sep}Scripts${sep}python.exe'
+            : '$root${sep}venv${sep}bin${sep}python3';
         if (!File(venvPython).existsSync()) {
           throw Exception(
             '백엔드 실행 환경이 없습니다.\n\n'

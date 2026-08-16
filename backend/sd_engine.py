@@ -25,6 +25,17 @@ SAMPLERS = {
 }
 
 
+def get_device() -> str:
+    if torch.cuda.is_available():
+        return "cuda"
+    if torch.backends.mps.is_available():
+        return "mps"
+    return "cpu"
+
+
+DEVICE = get_device()
+
+
 class SDEngine:
     def __init__(self):
         self.pipeline = None
@@ -113,7 +124,7 @@ class SDEngine:
         if cpu_offload:
             self.pipeline.enable_model_cpu_offload()
         else:
-            self.pipeline = self.pipeline.to("cuda")
+            self.pipeline = self.pipeline.to(DEVICE)
 
         if vram_optimization:
             self.pipeline.enable_attention_slicing()
@@ -153,7 +164,7 @@ class SDEngine:
                 requires_safety_checker=False,
             )
         if not cpu_offload:
-            self.img2img_pipeline = self.img2img_pipeline.to("cuda")
+            self.img2img_pipeline = self.img2img_pipeline.to(DEVICE)
 
         self.loaded_model_path = model_path
         self.inpaint_pipeline = None
@@ -265,6 +276,7 @@ class SDEngine:
         loras: Optional[list] = None,
         lora_dir: str = "models/lora",
         progress_callback: Optional[Callable] = None,
+        image_callback: Optional[Callable[[Image.Image, int], None]] = None,
     ) -> tuple[list[Image.Image], int]:
         if not self.pipeline:
             raise RuntimeError("모델이 로딩되지 않았습니다")
@@ -274,8 +286,6 @@ class SDEngine:
         if loras:
             self.apply_loras(loras, lora_dir)
 
-        self._set_sampler(self.pipeline, sampler)
-
         if seed == -1:
             seed = torch.randint(0, 2**32 - 1, (1,)).item()
 
@@ -284,7 +294,11 @@ class SDEngine:
         for i in range(batch_size):
             if self._cancel_event.is_set():
                 break
-            generator = torch.Generator("cuda").manual_seed(seed + i)
+            # 스케줄러를 매 이미지마다 새로 생성 — 인스턴스를 재사용하면
+            # DPM++ 계열 스케줄러의 내부 step 카운터가 어긋나 배치 후반부에서
+            # IndexError(sigmas out of bounds)가 발생할 수 있음
+            self._set_sampler(self.pipeline, sampler)
+            generator = torch.Generator(DEVICE).manual_seed(seed + i)
             callback = self._make_callback(steps, progress_callback,
                                            image_idx=i, total_images=batch_size)
             result = self.pipeline(
@@ -300,6 +314,9 @@ class SDEngine:
                 **extra,
             )
             images.extend(result.images)
+            if image_callback:
+                for img in result.images:
+                    image_callback(img, i)
 
         return images, seed
 
@@ -321,6 +338,7 @@ class SDEngine:
         loras: Optional[list] = None,
         lora_dir: str = "models/lora",
         progress_callback: Optional[Callable] = None,
+        image_callback: Optional[Callable[[Image.Image, int], None]] = None,
     ) -> tuple[list[Image.Image], int]:
         if not self.img2img_pipeline:
             raise RuntimeError("모델이 로딩되지 않았습니다")
@@ -329,8 +347,6 @@ class SDEngine:
         self.unload_loras()
         if loras:
             self.apply_loras(loras, lora_dir)
-
-        self._set_sampler(self.img2img_pipeline, sampler)
 
         init_image = init_image.convert("RGB").resize((width, height))
 
@@ -342,7 +358,8 @@ class SDEngine:
         for i in range(batch_size):
             if self._cancel_event.is_set():
                 break
-            generator = torch.Generator("cuda").manual_seed(seed + i)
+            self._set_sampler(self.img2img_pipeline, sampler)
+            generator = torch.Generator(DEVICE).manual_seed(seed + i)
             callback = self._make_callback(steps, progress_callback,
                                            image_idx=i, total_images=batch_size)
             result = self.img2img_pipeline(
@@ -358,6 +375,9 @@ class SDEngine:
                 **extra,
             )
             images.extend(result.images)
+            if image_callback:
+                for img in result.images:
+                    image_callback(img, i)
 
         return images, seed
 
@@ -387,7 +407,7 @@ class SDEngine:
                 requires_safety_checker=False,
             )
         if not cpu_offload:
-            self.inpaint_pipeline = self.inpaint_pipeline.to("cuda")
+            self.inpaint_pipeline = self.inpaint_pipeline.to(DEVICE)
         self.pipeline_mode = "inpaint"
 
     def inpaint(
@@ -425,7 +445,7 @@ class SDEngine:
 
         if seed == -1:
             seed = torch.randint(0, 2**32 - 1, (1,)).item()
-        generator = torch.Generator("cuda").manual_seed(seed)
+        generator = torch.Generator(DEVICE).manual_seed(seed)
 
         callback = self._make_callback(steps, progress_callback, image_idx=0, total_images=1)
 
@@ -463,6 +483,8 @@ class SDEngine:
         gc.collect()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            torch.mps.empty_cache()
 
 
 engine = SDEngine()
