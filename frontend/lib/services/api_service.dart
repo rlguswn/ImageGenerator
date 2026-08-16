@@ -40,7 +40,7 @@ class ApiService {
       Uri.parse('$baseUrl/txt2img'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(params),
-    ).timeout(const Duration(minutes: 10));
+    );
     if (res.statusCode != 200) throw Exception(jsonDecode(res.body)['detail']);
     return jsonDecode(res.body);
   }
@@ -50,7 +50,7 @@ class ApiService {
       Uri.parse('$baseUrl/img2img'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(params),
-    ).timeout(const Duration(minutes: 10));
+    );
     if (res.statusCode != 200) throw Exception(jsonDecode(res.body)['detail']);
     return jsonDecode(res.body);
   }
@@ -60,7 +60,7 @@ class ApiService {
       Uri.parse('$baseUrl/inpaint'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(params),
-    ).timeout(const Duration(minutes: 10));
+    );
     if (res.statusCode != 200) throw Exception(jsonDecode(res.body)['detail']);
     return jsonDecode(res.body);
   }

@@ -24,7 +24,7 @@ from pydantic import BaseModel
 from PIL import Image
 import base64
 
-from sd_engine import engine
+from sd_engine import engine, DEVICE
 from lora_train import trainer
 from port_check import find_available_port
 from logger import get_logger
@@ -40,7 +40,9 @@ def _raise_for_exception(e: Exception, context: str):
             free = torch.cuda.mem_get_info()[0] // 1024 ** 2
             total = torch.cuda.get_device_properties(0).total_memory // 1024 ** 2
             used = total - free
-        torch.cuda.empty_cache()
+            torch.cuda.empty_cache()
+        elif torch.backends.mps.is_available():
+            torch.mps.empty_cache()
         raise HTTPException(
             status_code=507,
             detail=f"VRAM 부족 (사용 중 {used}MB / 전체 {total}MB). "
@@ -51,6 +53,16 @@ def _raise_for_exception(e: Exception, context: str):
 CONFIG_PATH = Path("config.json")
 SAFETY_PATH = Path(__file__).parent / "safety.json"
 _generation_progress: dict = {}
+_generation_images: list[str] = []
+
+
+def _make_image_callback():
+    """생성 완료된 이미지를 즉시 base64로 인코딩해 진행상황 조회에 누적한다."""
+    def on_image(img, idx):
+        buf = io.BytesIO()
+        img.save(buf, "PNG")
+        _generation_images.append(base64.b64encode(buf.getvalue()).decode())
+    return on_image
 PRESETS_PATH = Path("presets.json")
 OUTPUT_DIR = Path("output")  # default; actual path is read from config at save time
 
@@ -226,6 +238,7 @@ def health():
         "model_loaded": engine.loaded_model_path is not None,
         "model_path": engine.loaded_model_path,
         "pipeline_mode": engine.pipeline_mode,
+        "device": DEVICE,
         "cuda_available": torch.cuda.is_available(),
         "vram_total": torch.cuda.get_device_properties(0).total_memory // 1024**2 if torch.cuda.is_available() else 0,
         "vram_free": (torch.cuda.get_device_properties(0).total_memory - torch.cuda.memory_allocated(0)) // 1024**2 if torch.cuda.is_available() else 0,
@@ -287,8 +300,9 @@ def txt2img(req: Txt2ImgRequest):
     config = load_config()
     lora_dir = config.get("model", {}).get("lora_path", "models/lora")
     start = time.time()
-    global _generation_progress
+    global _generation_progress, _generation_images
     _generation_progress = {}
+    _generation_images = []
     try:
         def on_progress(p):
             global _generation_progress
@@ -305,6 +319,7 @@ def txt2img(req: Txt2ImgRequest):
             clip_skip=req.clip_skip,
             sampler=req.sampler,
             loras=req.loras,
+            image_callback=_make_image_callback(),
             lora_dir=lora_dir,
             progress_callback=on_progress,
         )
@@ -355,8 +370,9 @@ def img2img(req: Img2ImgRequest):
     config = load_config()
     lora_dir = config.get("model", {}).get("lora_path", "models/lora")
     start = time.time()
-    global _generation_progress
+    global _generation_progress, _generation_images
     _generation_progress = {}
+    _generation_images = []
     try:
         def on_progress(p):
             global _generation_progress
@@ -376,6 +392,7 @@ def img2img(req: Img2ImgRequest):
             sampler=req.sampler,
             resize_mode=req.resize_mode,
             loras=req.loras,
+            image_callback=_make_image_callback(),
             lora_dir=lora_dir,
             progress_callback=on_progress,
         )
@@ -494,7 +511,7 @@ def inpaint(req: InpaintRequest):
 
 @app.get("/generate/progress")
 def get_progress():
-    return _generation_progress
+    return {**_generation_progress, "images": _generation_images}
 
 
 @app.post("/generate/cancel")
