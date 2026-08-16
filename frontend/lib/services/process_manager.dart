@@ -9,13 +9,16 @@ class ProcessManager {
 
   ProcessManager({this.port = 8000});
 
+  static String get _backendBinaryName =>
+      Platform.isWindows ? 'sd_backend.exe' : 'sd_backend';
+
   // 배포된 앱에서 번들된 Python 백엔드 실행
   Future<void> start({void Function(String)? onLog}) async {
     await _killExisting();
 
     final exeDir = File(Platform.resolvedExecutable).parent.path;
     final sep = Platform.pathSeparator;
-    final backendExe = '$exeDir${sep}sd_backend${sep}sd_backend.exe';
+    final backendExe = '$exeDir${sep}sd_backend$sep$_backendBinaryName';
 
     _process = await Process.start(
       backendExe,
@@ -27,11 +30,15 @@ class ProcessManager {
 
   Future<void> _killExisting() async {
     try {
-      await Process.run(
-        'taskkill',
-        ['/F', '/IM', 'sd_backend.exe'],
-        runInShell: true,
-      );
+      if (Platform.isWindows) {
+        await Process.run(
+          'taskkill',
+          ['/F', '/IM', 'sd_backend.exe'],
+          runInShell: true,
+        );
+      } else {
+        await Process.run('pkill', ['-f', 'sd_backend']);
+      }
       await Future.delayed(const Duration(milliseconds: 500));
     } catch (_) {}
   }
@@ -40,8 +47,12 @@ class ProcessManager {
   Future<void> startDev({void Function(String)? onLog}) async {
     final root = findProjectRoot();
     final sep = Platform.pathSeparator;
-    final venvPython = '$root${sep}venv${sep}Scripts${sep}python.exe';
-    final python = File(venvPython).existsSync() ? venvPython : 'python';
+    final venvPython = Platform.isWindows
+        ? '$root${sep}venv${sep}Scripts${sep}python.exe'
+        : '$root${sep}venv${sep}bin${sep}python3';
+    final python = File(venvPython).existsSync()
+        ? venvPython
+        : (Platform.isWindows ? 'python' : 'python3');
     final script = '$root${sep}backend${sep}main.py';
 
     _process = await Process.start(
@@ -87,17 +98,25 @@ class ProcessManager {
     }
     // 외부에서 실행된 백엔드도 강제 종료
     try {
-      await Process.run('taskkill', ['/F', '/IM', 'sd_backend.exe'],
-          runInShell: true);
+      if (Platform.isWindows) {
+        await Process.run('taskkill', ['/F', '/IM', 'sd_backend.exe'],
+            runInShell: true);
+      } else {
+        await Process.run('pkill', ['-f', 'sd_backend']);
+      }
     } catch (_) {}
     // 개발 모드: python으로 실행된 main.py 프로세스 종료
     try {
-      await Process.run(
-          'wmic',
-          ['process', 'where',
-           'commandline like "%backend\\\\main.py%"',
-           'delete'],
-          runInShell: true);
+      if (Platform.isWindows) {
+        await Process.run(
+            'wmic',
+            ['process', 'where',
+             'commandline like "%backend\\\\main.py%"',
+             'delete'],
+            runInShell: true);
+      } else {
+        await Process.run('pkill', ['-f', 'backend/main.py']);
+      }
     } catch (_) {}
   }
 

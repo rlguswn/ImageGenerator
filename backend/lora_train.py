@@ -13,6 +13,8 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
 
+from sd_engine import DEVICE
+
 
 class ImageDataset(Dataset):
     def __init__(self, image_dir: str, size: int = 512):
@@ -94,7 +96,7 @@ class LoRATrainer:
                 torch_dtype=torch.float32,  # 학습은 fp32 (GradScaler로 fp16 혼합)
                 safety_checker=None,
                 requires_safety_checker=False,
-            ).to("cuda")
+            ).to(DEVICE)
 
             # 학습 전용 DDPM 스케줄러 (add_noise 지원)
             noise_scheduler = DDPMScheduler.from_config(pipeline.scheduler.config)
@@ -118,7 +120,8 @@ class LoRATrainer:
             dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
 
             optimizer = torch.optim.AdamW(unet.parameters(), lr=learning_rate)
-            scaler = GradScaler("cuda")
+            use_amp = DEVICE == "cuda"
+            scaler = GradScaler("cuda", enabled=use_amp)
 
             global_step = 0
             data_iter = iter(dataloader)
@@ -130,7 +133,7 @@ class LoRATrainer:
                     data_iter = iter(dataloader)
                     batch = next(data_iter)
 
-                batch = batch.to("cuda")
+                batch = batch.to(DEVICE)
 
                 with torch.no_grad():
                     latents = pipeline.vae.encode(batch).latent_dist.sample() * 0.18215
@@ -138,7 +141,7 @@ class LoRATrainer:
                 noise = torch.randn_like(latents)
                 timesteps = torch.randint(
                     0, noise_scheduler.config.num_train_timesteps,
-                    (latents.shape[0],), device="cuda"
+                    (latents.shape[0],), device=DEVICE
                 ).long()
                 noisy_latents = noise_scheduler.add_noise(latents, noise, timesteps)
 
@@ -149,11 +152,11 @@ class LoRATrainer:
                             padding="max_length",
                             max_length=pipeline.tokenizer.model_max_length,
                             return_tensors="pt",
-                        ).input_ids.to("cuda")
+                        ).input_ids.to(DEVICE)
                     )[0]
 
                 optimizer.zero_grad()
-                with autocast("cuda"):
+                with autocast("cuda", enabled=use_amp):
                     noise_pred = unet(noisy_latents, timesteps, encoder_hidden_states).sample
                     loss = torch.nn.functional.mse_loss(
                         noise_pred.float(), noise.float()

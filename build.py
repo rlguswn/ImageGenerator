@@ -37,10 +37,14 @@ def run(cmd: list[str], cwd=None):
         log(f"오류: {' '.join(str(c) for c in cmd)}", RED)
         sys.exit(result.returncode)
 
+IS_WINDOWS = platform.system() == "Windows"
+
 def find_flutter() -> str:
     candidates = [
         r"D:\flutter\flutter\bin\flutter.bat",
         r"C:\flutter\bin\flutter.bat",
+        "/usr/local/bin/flutter",
+        str(Path.home() / "flutter/bin/flutter"),
         shutil.which("flutter") or "",
         shutil.which("flutter.bat") or "",
     ]
@@ -51,13 +55,15 @@ def find_flutter() -> str:
     sys.exit(1)
 
 def venv_python() -> str:
-    return str(ROOT / "venv" / "Scripts" / "python.exe")
+    if IS_WINDOWS:
+        return str(ROOT / "venv" / "Scripts" / "python.exe")
+    return str(ROOT / "venv" / "bin" / "python")
 
 def ensure_venv():
     if not Path(venv_python()).exists():
         log("\n[0/3] 가상환경 생성 중...", YELLOW)
         run([sys.executable, "-m", "venv", str(ROOT / "venv")])
-        req = ROOT / "requirements.txt"
+        req = ROOT / ("requirements-macos.txt" if platform.system() == "Darwin" else "requirements.txt")
         if req.exists():
             run([venv_python(), "-m", "pip", "install", "-r", str(req), "--quiet"])
         log("[0/3] 가상환경 준비 완료", GREEN)
@@ -76,11 +82,11 @@ def build_backend():
 def build_frontend():
     log("\n[2/3] Flutter 앱 빌드 중...", YELLOW)
     flutter = find_flutter()
-    # 실행 중인 앱 종료 (exe 잠금 방지)
-    if platform.system() == "Windows":
+    if IS_WINDOWS:
         subprocess.run(["taskkill", "/IM", "sd_local_app.exe", "/F"],
                        capture_output=True)
-    run([flutter, "build", "windows", "--release"], cwd=ROOT / "frontend")
+    target = "windows" if IS_WINDOWS else "macos"
+    run([flutter, "build", target, "--release"], cwd=ROOT / "frontend")
     log("[2/3] Flutter 빌드 완료", GREEN)
 
 def package():
@@ -88,19 +94,25 @@ def package():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
 
     # Flutter 빌드 결과 복사
-    flutter_release = ROOT / "frontend" / "build" / "windows" / "x64" / "runner" / "Release"
+    if IS_WINDOWS:
+        flutter_release = ROOT / "frontend" / "build" / "windows" / "x64" / "runner" / "Release"
+    else:
+        flutter_release = ROOT / "frontend" / "build" / "macos" / "Build" / "Products" / "Release"
     if not flutter_release.exists():
         log("Flutter 빌드 결과물이 없습니다. --skip-frontend 없이 다시 실행하세요.", RED)
         sys.exit(1)
     shutil.copytree(flutter_release, OUT_DIR, dirs_exist_ok=True)
 
-    # 백엔드 복사 (robocopy: 잠긴 파일도 강제 덮어쓰기)
+    # 백엔드 복사
     backend_dist = ROOT / "dist" / "backend" / "sd_backend"
     if backend_dist.exists():
-        subprocess.run([
-            "robocopy", str(backend_dist), str(OUT_DIR / "sd_backend"),
-            "/E", "/IS", "/IT", "/NFL", "/NDL", "/NP",
-        ])
+        if IS_WINDOWS:
+            subprocess.run([
+                "robocopy", str(backend_dist), str(OUT_DIR / "sd_backend"),
+                "/E", "/IS", "/IT", "/NFL", "/NDL", "/NP",
+            ])
+        else:
+            shutil.copytree(backend_dist, OUT_DIR / "sd_backend", dirs_exist_ok=True)
         # safety.json 복사
         safety_src = ROOT / "backend" / "safety.json"
         safety_dst = OUT_DIR / "sd_backend" / "backend" / "safety.json"
