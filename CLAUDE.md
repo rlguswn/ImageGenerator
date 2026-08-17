@@ -1,9 +1,9 @@
 # ImageGenerator — Claude Code 가이드
 
 ## 프로젝트 개요
-Stable Diffusion 기반 Windows 로컬 이미지 생성 앱.
-- **백엔드**: FastAPI + diffusers (Python) — `http://127.0.0.1:8000`
-- **프론트엔드**: Flutter Windows 앱
+Stable Diffusion 기반 로컬 이미지 생성 앱. Windows(CUDA), macOS(MPS) 둘 다 지원.
+- **백엔드**: FastAPI + diffusers (Python) — `http://127.0.0.1:8000`, torch 디바이스는 cuda→mps→cpu 순 자동 감지
+- **프론트엔드**: Flutter (Windows / macOS)
 
 ---
 
@@ -95,23 +95,58 @@ cancel_generation → 생성 중단
 
 ## 개발 환경
 
+**Windows**
+
 | 항목 | 값 |
 |---|---|
 | OS | Windows 10 Pro |
 | Python | 3.10.6 (venv: `venv/`) |
 | GPU | NVIDIA RTX 2070 (VRAM 8GB) |
 | Flutter | 3.41.9 (`D:\flutter\flutter`) |
+| requirements | `requirements.txt` (torch CUDA 12.4 빌드) |
+
+**macOS**
+
+| 항목 | 값 |
+|---|---|
+| OS | macOS (Apple Silicon) |
+| Python | 3.11 (venv: `venv/`, homebrew python3.11로 생성) |
+| GPU | Apple Silicon 통합 GPU (MPS) |
+| Flutter | `frontend/macos/` 스캐폴딩 포함 |
+| requirements | `requirements-macos.txt` (CUDA 없는 torch, MPS 사용) |
+
+macOS는 Flutter macOS 타깃의 앱 샌드박스(`app-sandbox`)를 꺼둬야 함 —
+켜져 있으면 EULA.txt/config.json 등 임의 경로 파일 접근이 막혀서
+첫 실행부터 크래시남. `frontend/macos/Runner/*.entitlements` 참고.
 
 ### 서버 수동 실행
+
+Windows:
 ```powershell
 cd D:\project\ImageGenerator
 venv\Scripts\python.exe backend\main.py
 ```
 
+macOS:
+```bash
+cd ~/Desktop/project/ImageGenerator
+venv/bin/python3 backend/main.py
+# 또는 더블클릭: restart_backend.command
+```
+
 ### 앱 실행
+
+Windows:
 ```powershell
 cd D:\project\ImageGenerator\frontend
 D:\flutter\flutter\bin\flutter.bat run -d windows
+```
+
+macOS:
+```bash
+cd ~/Desktop/project/ImageGenerator/frontend
+flutter run -d macos
+# 또는 더블클릭: run_dev.command (프로젝트 루트)
 ```
 
 ---
@@ -131,6 +166,10 @@ D:\flutter\flutter\bin\flutter.bat run -d windows
 | `frontend/lib/services/session_storage.dart` | 로컬 설정/세션 저장 |
 | `config.json` | 서버/모델/생성 설정 (gitignore) |
 | `EULA.txt` | 최종 사용자 라이선스 계약 |
-| `build.py` | 전체 빌드 자동화 (Python) |
+| `build.py` | 전체 빌드 자동화 (Python), OS별 requirements 자동 선택 |
+| `requirements.txt` | Windows용 (torch CUDA 빌드) |
+| `requirements-macos.txt` | macOS용 (torch, MPS) |
+| `run_dev.command` | macOS 원클릭 실행 (bat 파일 대응) |
+| `restart_backend.command` | macOS 백엔드만 재시작 |
 | `WORKGUIDE.md` | 개발 규칙 및 가이드 |
 | `PROGRESS.md` | 변경 이력 |
