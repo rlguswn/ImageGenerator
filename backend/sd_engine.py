@@ -1,3 +1,4 @@
+import functools
 import gc
 import time
 import threading
@@ -34,6 +35,25 @@ def get_device() -> str:
 
 
 DEVICE = get_device()
+
+
+def _exclusive(method):
+    """모델 로딩/생성 메서드가 동시에 겹쳐 호출되는 걸 막는다.
+
+    self.pipeline과 self.pipeline.scheduler는 여러 스레드가 공유하는
+    가변 상태라, FastAPI의 동기 엔드포인트가 스레드풀에서 겹쳐 실행되면
+    (Flutter 앱 중복 클릭, MCP 서버의 동시 호출 등) 스케줄러 내부 카운터가
+    어긋나 IndexError 등으로 조용히 깨진다. 대기시키지 않고 즉시 거절한다.
+    """
+    @functools.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        if not self._lock.acquire(blocking=False):
+            raise RuntimeError("이미 다른 생성/로딩 작업이 진행 중입니다. 잠시 후 다시 시도하세요.")
+        try:
+            return method(self, *args, **kwargs)
+        finally:
+            self._lock.release()
+    return wrapper
 
 
 class SDEngine:
@@ -74,6 +94,7 @@ class SDEngine:
         stem = Path(model_path).stem
         return Path(model_path).parent.parent / "cache" / f"{stem}_{precision}"
 
+    @_exclusive
     def load_model(
         self,
         model_path: str,
@@ -261,6 +282,7 @@ class SDEngine:
             self.pipeline.unload_lora_weights()
             self.loaded_loras.clear()
 
+    @_exclusive
     def txt2img(
         self,
         prompt: str,
@@ -320,6 +342,7 @@ class SDEngine:
 
         return images, seed
 
+    @_exclusive
     def img2img(
         self,
         init_image: Image.Image,
@@ -410,6 +433,7 @@ class SDEngine:
             self.inpaint_pipeline = self.inpaint_pipeline.to(DEVICE)
         self.pipeline_mode = "inpaint"
 
+    @_exclusive
     def inpaint(
         self,
         init_image: Image.Image,

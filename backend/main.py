@@ -34,6 +34,8 @@ app = FastAPI(title="SD Local API")
 
 def _raise_for_exception(e: Exception, context: str):
     msg = str(e)
+    if "이미 다른 생성/로딩 작업이 진행 중입니다" in msg:
+        raise HTTPException(status_code=409, detail=msg)
     if "out of memory" in msg.lower() or isinstance(e, torch.cuda.OutOfMemoryError):
         free = used = total = 0
         if torch.cuda.is_available():
